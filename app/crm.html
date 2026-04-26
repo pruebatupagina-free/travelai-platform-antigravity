@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRM — TravelAI Platform</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    .crm-header-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .crm-stats { display: flex; gap: 16px; }
+    .crm-stat {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 10px 18px; text-align: center;
+    }
+    .crm-stat .val { font-size: 1.4rem; font-weight: 800; }
+    .crm-stat .lbl { font-size: 0.7rem; color: var(--text-muted); }
+
+    /* Kanban */
+    .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start; }
+    @media(max-width:1100px){ .kanban { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:640px) { .kanban { grid-template-columns: 1fr; } }
+
+    .kanban-col {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 16px; min-height: 300px;
+    }
+    .kanban-col.drag-over {
+      border-color: var(--cyan); background: var(--cyan-dim);
+    }
+    .col-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .col-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .col-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .col-count {
+      background: rgba(255,255,255,0.08); border-radius: 999px;
+      padding: 2px 8px; font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+    }
+    .col-cards { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+
+    /* Lead card */
+    .lead-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 14px;
+      cursor: grab; transition: var(--transition); user-select: none;
+    }
+    .lead-card:hover {
+      border-color: var(--border-accent); transform: translateY(-2px);
+      box-shadow: var(--shadow-glow-cyan);
+    }
+    .lead-card.dragging { opacity: 0.4; cursor: grabbing; }
+    .lead-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .lead-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .lead-name { font-size: 0.88rem; font-weight: 600; }
+    .lead-dest { font-size: 0.75rem; color: var(--text-muted); }
+    .lead-detail {
+      font-size: 0.75rem; color: var(--text-secondary);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .lead-budget { color: var(--cyan); font-weight: 600; font-size: 0.8rem; }
+    .lead-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .lead-action-btn {
+      flex: 1; padding: 5px 0; border-radius: var(--radius-sm);
+      font-size: 0.72rem; font-weight: 600; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); color: var(--text-secondary);
+      transition: var(--transition); cursor: pointer;
+    }
+    .lead-action-btn:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+
+    /* Add lead button */
+    .add-card-btn {
+      width: 100%; padding: 10px; border-radius: var(--radius-md);
+      background: transparent; border: 1px dashed var(--border);
+      color: var(--text-muted); font-size: 0.8rem; cursor: pointer;
+      transition: var(--transition); margin-top: 10px;
+    }
+    .add-card-btn:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: var(--transition);
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 28px; width: 440px; max-width: 95%;
+    }
+    .modal h3 { margin-bottom: 20px; }
+    .modal .form-group { margin-bottom: 14px; }
+    .modal .form-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+    .modal .form-control {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 9px 13px;
+      color: var(--text-primary); font-size: 0.88rem; transition: var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+    .modal .form-control:focus { border-color: var(--cyan); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions button { flex: 1; justify-content: center; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">✈️</div>
+      <div>
+        <div class="logo-text">TravelAI</div>
+        <div class="logo-sub">PLATFORM</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Principal</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="chatbot.html" class="nav-item"><span class="nav-icon">🤖</span> Chatbot IA</a>
+      <a href="itinerario.html" class="nav-item"><span class="nav-icon">🗺️</span> Itinerarios</a>
+      <a href="crm.html" class="nav-item active"><span class="nav-icon">👥</span> CRM</a>
+      <div class="sidebar-section-label">Sistema</div>
+      <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
+      <a href="../index.html" class="nav-item"><span class="nav-icon">🏠</span> Inicio</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">AG</div>
+        <div class="user-info">
+          <div class="user-name">Agencia Demo</div>
+          <div class="user-plan">Plan Pro</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="app-header">
+      <h1>👥 CRM — Pipeline de Ventas</h1>
+      <div class="app-header-right">
+        <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nuevo lead</button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <div class="crm-header-bar">
+        <div class="crm-stats">
+          <div class="crm-stat"><div class="val" style="color:var(--cyan)">6</div><div class="lbl">Total leads</div></div>
+          <div class="crm-stat"><div class="val" style="color:var(--emerald)">2</div><div class="lbl">Cerrados</div></div>
+          <div class="crm-stat"><div class="val" style="color:var(--blue)">$18,400</div><div class="lbl">Pipeline</div></div>
+        </div>
+      </div>
+
+      <!-- KANBAN -->
+      <div class="kanban" id="kanban">
+
+        <!-- Col 1: Nuevo Lead -->
+        <div class="kanban-col" id="col-nuevo" data-col="nuevo" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#06b6d4"></div>Nuevo Lead</div>
+            <span class="col-count" id="count-nuevo">2</span>
+          </div>
+          <div class="col-cards" id="cards-nuevo"></div>
+          <button class="add-card-btn" onclick="openModal('nuevo')">+ Agregar lead</button>
+        </div>
+
+        <!-- Col 2: Cotizando -->
+        <div class="kanban-col" id="col-cotizando" data-col="cotizando" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#f59e0b"></div>Cotizando</div>
+            <span class="col-count" id="count-cotizando">2</span>
+          </div>
+          <div class="col-cards" id="cards-cotizando"></div>
+          <button class="add-card-btn" onclick="openModal('cotizando')">+ Agregar lead</button>
+        </div>
+
+        <!-- Col 3: Seguimiento -->
+        <div class="kanban-col" id="col-seguimiento" data-col="seguimiento" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#8b5cf6"></div>Seguimiento</div>
+            <span class="col-count" id="count-seguimiento">1</span>
+          </div>
+          <div class="col-cards" id="cards-seguimiento"></div>
+          <button class="add-card-btn" onclick="openModal('seguimiento')">+ Agregar lead</button>
+        </div>
+
+        <!-- Col 4: Cerrado -->
+        <div class="kanban-col" id="col-cerrado" data-col="cerrado" ondragover="onDragOver(event)" ondrop="onDrop(event)" ondragleave="onDragLeave(event)">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#10b981"></div>Cerrado ✓</div>
+            <span class="col-count" id="count-cerrado">1</span>
+          </div>
+          <div class="col-cards" id="cards-cerrado"></div>
+          <button class="add-card-btn" onclick="openModal('cerrado')">+ Agregar lead</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>➕ Nuevo Lead</h3>
+    <div class="form-group">
+      <label>Nombre completo</label>
+      <input id="mNombre" class="form-control" type="text" placeholder="Ej: María González" />
+    </div>
+    <div class="form-group">
+      <label>Destino de interés</label>
+      <input id="mDestino" class="form-control" type="text" placeholder="Ej: 🇲🇽 Cancún" />
+    </div>
+    <div class="form-group">
+      <label>Presupuesto</label>
+      <input id="mPresupuesto" class="form-control" type="text" placeholder="Ej: $3,500" />
+    </div>
+    <div class="form-group">
+      <label>Personas</label>
+      <input id="mPersonas" class="form-control" type="text" placeholder="Ej: 2 personas" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="addLead()">Agregar lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const COLORS = ['#06b6d4','#3b82f6','#8b5cf6','#10b981','#f59e0b','#f43f5e','#14b8a6','#ec4899'];
+  let leads = [
+    { id:1, nombre:'María González', destino:'🇲🇽 Cancún', presupuesto:'$4,200', personas:'4 personas', col:'nuevo',    color:'#06b6d4' },
+    { id:2, nombre:'Carlos Ramos',   destino:'🇪🇺 Europa',  presupuesto:'$8,500', personas:'2 personas', col:'nuevo',    color:'#3b82f6' },
+    { id:3, nombre:'Ana Martínez',   destino:'🇨🇦 Canadá',  presupuesto:'$2,800', personas:'1 persona',  col:'cotizando',color:'#8b5cf6' },
+    { id:4, nombre:'Luis Pérez',     destino:'🇺🇸 Miami',   presupuesto:'$1,900', personas:'2 personas', col:'cotizando',color:'#f59e0b' },
+    { id:5, nombre:'Sandra López',   destino:'🇮🇩 Bali',    presupuesto:'$5,200', personas:'2 personas', col:'seguimiento',color:'#10b981'},
+    { id:6, nombre:'Roberto Cruz',   destino:'🇲🇽 CDMX',    presupuesto:'$3,800', personas:'6 personas', col:'cerrado',  color:'#f43f5e' },
+  ];
+  let dragId = null;
+  let modalCol = 'nuevo';
+
+  function initials(name) {
+    return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  }
+
+  function renderLeads() {
+    ['nuevo','cotizando','seguimiento','cerrado'].forEach(col => {
+      const container = document.getElementById('cards-' + col);
+      container.innerHTML = '';
+      const colLeads = leads.filter(l => l.col === col);
+      document.getElementById('count-' + col).textContent = colLeads.length;
+      colLeads.forEach(lead => {
+        const card = document.createElement('div');
+        card.className = 'lead-card';
+        card.draggable = true;
+        card.id = 'lead-' + lead.id;
+        card.innerHTML = `
+          <div class="lead-card-top">
+            <div class="lead-avatar" style="background:${lead.color}">${initials(lead.nombre)}</div>
+            <div>
+              <div class="lead-name">${lead.nombre}</div>
+              <div class="lead-dest">${lead.destino}</div>
+            </div>
+          </div>
+          <div class="lead-detail">
+            <span>${lead.personas}</span>
+            <span class="lead-budget">${lead.presupuesto}</span>
+          </div>
+          <div class="lead-actions">
+            <button class="lead-action-btn" onclick="event.stopPropagation();contactLead(${lead.id})">📞 Contactar</button>
+            <button class="lead-action-btn" onclick="event.stopPropagation();deleteLead(${lead.id})">🗑️ Eliminar</button>
+          </div>`;
+        card.addEventListener('dragstart', e => { dragId = lead.id; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+        card.addEventListener('dragend', () => card.classList.remove('dragging'));
+        container.appendChild(card);
+      });
+    });
+  }
+
+  function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+  function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+  function onDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const col = e.currentTarget.dataset.col;
+    const lead = leads.find(l => l.id === dragId);
+    if (lead) { lead.col = col; renderLeads(); }
+    dragId = null;
+  }
+
+  function contactLead(id) {
+    const lead = leads.find(l => l.id === id);
+    alert(`📞 Contactar a ${lead.nombre}\nDestino: ${lead.destino}\nPresupuesto: ${lead.presupuesto}`);
+  }
+
+  function deleteLead(id) {
+    if (confirm('¿Eliminar este lead?')) {
+      leads = leads.filter(l => l.id !== id);
+      renderLeads();
+    }
+  }
+
+  function openModal(col = 'nuevo') {
+    modalCol = col;
+    document.getElementById('modalOverlay').classList.add('open');
+    document.getElementById('mNombre').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    ['mNombre','mDestino','mPresupuesto','mPersonas'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  function addLead() {
+    const nombre = document.getElementById('mNombre').value.trim();
+    const destino = document.getElementById('mDestino').value.trim();
+    const presupuesto = document.getElementById('mPresupuesto').value.trim();
+    const personas = document.getElementById('mPersonas').value.trim();
+    if (!nombre) { alert('El nombre es requerido.'); return; }
+    leads.push({
+      id: Date.now(), nombre, destino: destino || '🌍 Por definir',
+      presupuesto: presupuesto || '$0', personas: personas || '1 persona',
+      col: modalCol, color: COLORS[Math.floor(Math.random() * COLORS.length)]
+    });
+    closeModal(); renderLeads();
+  }
+
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  renderLeads();
+</script>
+</body>
+</html>

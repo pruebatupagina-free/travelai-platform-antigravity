@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Itinerarios — TravelAI Platform</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    .itin-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; min-height: calc(100vh - 64px - 56px); }
+    @media(max-width:900px){ .itin-layout { grid-template-columns: 1fr; } }
+
+    /* Form panel */
+    .form-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px; align-self: start;
+      position: sticky; top: 88px;
+    }
+    .form-panel h2 { font-size: 1.1rem; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .form-control {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      color: var(--text-primary); font-size: 0.88rem; transition: var(--transition);
+    }
+    .form-control:focus { border-color: var(--cyan); background: rgba(6,182,212,0.05); }
+    .form-control::placeholder { color: var(--text-muted); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-generate {
+      width: 100%; justify-content: center;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #fff; padding: 14px; border-radius: var(--radius-md);
+      font-size: 0.95rem; font-weight: 700; transition: var(--transition);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-generate:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+    /* Output panel */
+    .output-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    .output-header {
+      padding: 16px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,0.02);
+    }
+    .output-header h3 { font-size: 0.95rem; }
+    .output-actions { display: flex; gap: 8px; }
+    .output-body { padding: 28px; min-height: 400px; }
+    .output-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 400px; color: var(--text-muted); text-align: center; gap: 12px;
+    }
+    .output-placeholder .icon { font-size: 3rem; opacity: 0.4; }
+
+    /* Itinerary formatting */
+    #itineraryContent { line-height: 1.8; }
+    #itineraryContent h1 { font-size: 1.5rem; color: var(--cyan); margin-bottom: 8px; }
+    #itineraryContent h2 { font-size: 1.1rem; color: var(--blue); margin: 20px 0 8px; border-left: 3px solid var(--blue); padding-left: 12px; }
+    #itineraryContent h3 { font-size: 0.95rem; color: var(--text-primary); margin: 12px 0 4px; }
+    #itineraryContent p { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 8px; }
+    #itineraryContent ul { padding-left: 20px; margin-bottom: 8px; }
+    #itineraryContent li { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 4px; }
+    #itineraryContent strong { color: var(--text-primary); }
+
+    @media print {
+      .sidebar, .app-header, .form-panel, .output-header, .navbar { display: none !important; }
+      .main-content { margin-left: 0; }
+      .itin-layout { grid-template-columns: 1fr; }
+      .output-panel { border: none; }
+      .output-body { padding: 0; }
+      body { background: #fff; color: #000; }
+      #itineraryContent * { color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">✈️</div>
+      <div>
+        <div class="logo-text">TravelAI</div>
+        <div class="logo-sub">PLATFORM</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Principal</div>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="chatbot.html" class="nav-item"><span class="nav-icon">🤖</span> Chatbot IA</a>
+      <a href="itinerario.html" class="nav-item active"><span class="nav-icon">🗺️</span> Itinerarios</a>
+      <a href="crm.html" class="nav-item"><span class="nav-icon">👥</span> CRM</a>
+      <div class="sidebar-section-label">Sistema</div>
+      <a href="#" class="nav-item"><span class="nav-icon">⚙️</span> Configuración</a>
+      <a href="../index.html" class="nav-item"><span class="nav-icon">🏠</span> Inicio</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">AG</div>
+        <div class="user-info">
+          <div class="user-name">Agencia Demo</div>
+          <div class="user-plan">Plan Pro</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="app-header">
+      <h1>🗺️ Generador de Itinerarios</h1>
+      <div class="app-header-right">
+        <input id="apiKeyItin" type="password" 
+          style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text-primary);font-size:0.78rem;width:240px;font-family:Inter,sans-serif;"
+          placeholder="🔑 Gemini API Key (aistudio.google.com)" />
+      </div>
+    </header>
+
+    <div class="app-body">
+      <div class="itin-layout">
+
+        <!-- FORM -->
+        <div class="form-panel">
+          <h2>✈️ Configurar viaje</h2>
+          <div class="form-group">
+            <label>Destino</label>
+            <input id="destino" class="form-control" type="text" placeholder="Ej: Cancún, México" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de ida</label>
+              <input id="fechaIda" class="form-control" type="date" />
+            </div>
+            <div class="form-group">
+              <label>Fecha de vuelta</label>
+              <input id="fechaVuelta" class="form-control" type="date" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label># Personas</label>
+              <select id="personas" class="form-control">
+                <option>1</option><option>2</option><option>3</option>
+                <option>4</option><option value="5+">5+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo de viaje</label>
+              <select id="tipo" class="form-control">
+                <option>Playa y relax</option>
+                <option>Aventura</option>
+                <option>Cultural</option>
+                <option>Romántico</option>
+                <option>Familiar</option>
+                <option>Negocios</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Presupuesto total (USD)</label>
+            <select id="presupuesto" class="form-control">
+              <option>Económico (menos de $1,000)</option>
+              <option>Moderado ($1,000 - $3,000)</option>
+              <option>Estándar ($3,000 - $6,000)</option>
+              <option>Premium ($6,000 - $12,000)</option>
+              <option>Lujo (más de $12,000)</option>
+            </select>
+          </div>
+          <button class="btn-generate" id="generateBtn" onclick="generateItinerary()">
+            <span id="btnIcon">🪄</span>
+            <span id="btnText">Generar itinerario</span>
+          </button>
+        </div>
+
+        <!-- OUTPUT -->
+        <div class="output-panel">
+          <div class="output-header">
+            <h3 id="outputTitle">Itinerario generado</h3>
+            <div class="output-actions">
+              <button class="btn btn-ghost btn-sm" id="copyBtn" onclick="copyItinerary()" style="display:none">📋 Copiar</button>
+              <button class="btn btn-ghost btn-sm" id="pdfBtn" onclick="window.print()" style="display:none">📄 PDF</button>
+            </div>
+          </div>
+          <div class="output-body">
+            <div class="output-placeholder" id="placeholder">
+              <div class="icon">🗺️</div>
+              <p>Completa el formulario y haz clic en <strong>"Generar itinerario"</strong><br>para que la IA cree tu plan de viaje personalizado.</p>
+              <p style="font-size:0.78rem;">Recuerda agregar tu Gemini API Key gratuita arriba ↑</p>
+            </div>
+            <div id="itineraryContent" style="display:none"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Load saved key
+  const savedKey = localStorage.getItem('gemini_api_key') || '';
+  if (savedKey) document.getElementById('apiKeyItin').value = '••••••••••••••••';
+
+  function getApiKey() {
+    const val = document.getElementById('apiKeyItin').value.trim();
+    if (val && val !== '••••••••••••••••') {
+      localStorage.setItem('gemini_api_key', val);
+      return val;
+    }
+    return localStorage.getItem('gemini_api_key') || '';
+  }
+
+  function simpleMarkdown(text) {
+    return text
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, s => `<ul>${s}</ul>`)
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/^(?!<[h|u|l])(.+)$/gm, '<p>$1</p>');
+  }
+
+  async function generateItinerary() {
+    const apiKey = getApiKey();
+    const destino = document.getElementById('destino').value.trim();
+    const fechaIda = document.getElementById('fechaIda').value;
+    const fechaVuelta = document.getElementById('fechaVuelta').value;
+    const personas = document.getElementById('personas').value;
+    const tipo = document.getElementById('tipo').value;
+    const presupuesto = document.getElementById('presupuesto').value;
+
+    if (!destino) { alert('Por favor ingresa un destino.'); return; }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    document.getElementById('btnIcon').innerHTML = '<div class="spinner"></div>';
+    document.getElementById('btnText').textContent = 'Generando...';
+    document.getElementById('placeholder').style.display = 'none';
+    document.getElementById('itineraryContent').style.display = 'none';
+
+    const dias = fechaIda && fechaVuelta
+      ? Math.max(1, Math.round((new Date(fechaVuelta) - new Date(fechaIda)) / 86400000))
+      : 7;
+
+    const prompt = `Crea un itinerario de viaje completo y detallado para:
+- Destino: ${destino}
+- Duración: ${dias} días
+- Número de personas: ${personas}
+- Tipo de viaje: ${tipo}
+- Presupuesto: ${presupuesto}
+${fechaIda ? `- Fecha de ida: ${fechaIda}` : ''}
+${fechaVuelta ? `- Fecha de vuelta: ${fechaVuelta}` : ''}
+
+El itinerario debe incluir:
+1. Título atractivo con el destino
+2. Resumen del viaje (clima, mejor época, tips generales)
+3. Plan día a día con: mañana, tarde y noche. Incluir actividades, lugares, restaurantes recomendados
+4. Hoteles sugeridos según presupuesto (3 opciones)
+5. Tips de transporte local
+6. Presupuesto estimado desglosado
+7. Tips culturales importantes
+
+Usa formato Markdown con encabezados claros. Responde en español.`;
+
+    if (!apiKey) {
+      document.getElementById('itineraryContent').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">
+        <div style="font-size:2rem;margin-bottom:12px">🔑</div>
+        <p>Necesitas una Gemini API Key gratuita para generar itinerarios.</p>
+        <p style="margin-top:8px">Obtén la tuya en <a href="https://aistudio.google.com" target="_blank" style="color:var(--cyan)">aistudio.google.com</a> (gratis)</p>
+      </div>`;
+      document.getElementById('itineraryContent').style.display = 'block';
+      btn.disabled = false;
+      document.getElementById('btnIcon').textContent = '🪄';
+      document.getElementById('btnText').textContent = 'Generar itinerario';
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] })
+        }
+      );
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar el itinerario.';
+      document.getElementById('itineraryContent').innerHTML = simpleMarkdown(text);
+      document.getElementById('itineraryContent').style.display = 'block';
+      document.getElementById('outputTitle').textContent = `✈️ Itinerario: ${destino}`;
+      document.getElementById('copyBtn').style.display = 'inline-flex';
+      document.getElementById('pdfBtn').style.display = 'inline-flex';
+      window._lastItinerary = text;
+    } catch (e) {
+      document.getElementById('itineraryContent').innerHTML = '<p style="color:var(--rose)">❌ Error al generar. Verifica tu API Key e internet.</p>';
+      document.getElementById('itineraryContent').style.display = 'block';
+    }
+
+    btn.disabled = false;
+    document.getElementById('btnIcon').textContent = '🪄';
+    document.getElementById('btnText').textContent = 'Generar itinerario';
+  }
+
+  function copyItinerary() {
+    if (window._lastItinerary) {
+      navigator.clipboard.writeText(window._lastItinerary).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ Copiado';
+        setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+      });
+    }
+  }
+
+  // Set default dates
+  const today = new Date();
+  const next7 = new Date(today); next7.setDate(today.getDate() + 7);
+  const fmt = d => d.toISOString().split('T')[0];
+  document.getElementById('fechaIda').value = fmt(today);
+  document.getElementById('fechaVuelta').value = fmt(next7);
+</script>
+</body>
+</html>

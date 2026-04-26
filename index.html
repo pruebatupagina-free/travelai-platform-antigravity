@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TravelAI Platform — Automatiza tu agencia de viajes con IA</title>
+  <meta name="description" content="TravelAI Platform: chatbot IA, generador de itinerarios, CRM y dashboard analytics para agencias de viajes. Automatiza tu negocio hoy." />
+  <meta property="og:title" content="TravelAI Platform" />
+  <meta property="og:description" content="Automatiza tu agencia de viajes con Inteligencia Artificial" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Navbar ── */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      background: rgba(10,15,30,0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 68px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-logo .icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .nav-logo span { font-weight: 800; font-size: 1rem; }
+    .nav-logo span em { color: var(--cyan); font-style: normal; }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); transition: var(--transition); }
+    .nav-links a:hover { color: var(--text-primary); }
+    .nav-cta { display: flex; gap: 12px; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 160px 0 96px;
+      text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge { margin-bottom: 24px; }
+    .hero h1 { margin-bottom: 20px; }
+    .hero h1 span { background: linear-gradient(135deg, var(--cyan), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.15rem; max-width: 560px; margin: 0 auto 36px; }
+    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .hero-stats { display: flex; gap: 40px; justify-content: center; margin-top: 56px; flex-wrap: wrap; }
+    .hero-stat { text-align: center; }
+    .hero-stat .val { font-size: 2rem; font-weight: 800; color: var(--cyan); }
+    .hero-stat .lbl { font-size: 0.8rem; color: var(--text-muted); }
+
+    /* ── Features ── */
+    .features { padding: 96px 0; }
+    .section-label { text-align: center; margin-bottom: 12px; }
+    .section-title { text-align: center; margin-bottom: 16px; }
+    .section-sub { text-align: center; max-width: 520px; margin: 0 auto 56px; }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 32px;
+      transition: var(--transition); position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      opacity: 0; transition: var(--transition);
+    }
+    .feature-card:hover { border-color: var(--border-accent); transform: translateY(-4px); }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; margin-bottom: 20px;
+    }
+    .feature-card h3 { margin-bottom: 10px; }
+    .feature-card p { font-size: 0.9rem; }
+    .feature-tag { margin-top: 16px; }
+
+    /* ── Pricing ── */
+    .pricing { padding: 96px 0; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    .pricing-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 32px;
+      position: relative; transition: var(--transition);
+    }
+    .pricing-card.featured {
+      border-color: var(--cyan); background: rgba(6,182,212,0.05);
+      transform: scale(1.03);
+    }
+    .pricing-card.featured .popular-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #fff; padding: 4px 16px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .pricing-name { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .pricing-price { font-size: 2.8rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+    .pricing-price span { font-size: 1rem; font-weight: 400; color: var(--text-muted); }
+    .pricing-desc { font-size: 0.85rem; margin-bottom: 24px; }
+    .pricing-features { margin-bottom: 28px; }
+    .pricing-features li {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.85rem; color: var(--text-secondary); padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .pricing-features li::before { content: '✓'; color: var(--cyan); font-weight: 700; flex-shrink: 0; }
+    .pricing-card .btn { width: 100%; justify-content: center; }
+
+    /* ── CTA Section ── */
+    .cta-section {
+      padding: 80px 0; text-align: center;
+      background: linear-gradient(180deg, transparent, rgba(6,182,212,0.05), transparent);
+    }
+    .cta-section h2 { margin-bottom: 16px; }
+    .cta-section p { margin-bottom: 32px; }
+    .cta-section .cta-btns { display: flex; gap: 14px; justify-content: center; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0; text-align: center;
+    }
+    footer p { font-size: 0.82rem; color: var(--text-muted); }
+    footer a { color: var(--cyan); }
+
+    @media (max-width: 768px) {
+      .features-grid, .pricing-grid { grid-template-columns: 1fr; }
+      .pricing-card.featured { transform: scale(1); }
+      .nav-links { display: none; }
+      .navbar { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-logo">
+    <div class="icon">✈️</div>
+    <span>Travel<em>AI</em></span>
+  </div>
+  <div class="nav-links">
+    <a href="#modulos">Módulos</a>
+    <a href="#precios">Precios</a>
+    <a href="app/dashboard.html">Demo en vivo</a>
+  </div>
+  <div class="nav-cta">
+    <a href="app/dashboard.html" class="btn btn-primary btn-sm">Ver demo →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge animate-fade-up">
+      <span class="badge badge-cyan">✨ Potenciado con IA · Gratis para empezar</span>
+    </div>
+    <h1 class="animate-fade-up delay-1">
+      Automatiza tu agencia<br>de viajes con <span>IA</span>
+    </h1>
+    <p class="animate-fade-up delay-2">
+      Chatbot inteligente, itinerarios personalizados, CRM visual y dashboard analytics — todo en una sola plataforma.
+    </p>
+    <div class="hero-cta animate-fade-up delay-3">
+      <a href="app/dashboard.html" id="cta-demo" class="btn btn-primary btn-lg">🚀 Ver demo en vivo</a>
+      <a href="#precios" class="btn btn-outline btn-lg">Ver precios</a>
+    </div>
+    <div class="hero-stats animate-fade-up delay-4">
+      <div class="hero-stat"><div class="val">+2,400</div><div class="lbl">Itinerarios generados</div></div>
+      <div class="hero-stat"><div class="val">98%</div><div class="lbl">Satisfacción de clientes</div></div>
+      <div class="hero-stat"><div class="val">3x</div><div class="lbl">Más conversiones</div></div>
+      <div class="hero-stat"><div class="val">24/7</div><div class="lbl">Chatbot activo</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- MÓDULOS -->
+<section class="features" id="modulos">
+  <div class="container">
+    <div class="section-label"><span class="badge badge-blue">4 Módulos poderosos</span></div>
+    <h2 class="section-title">Todo lo que tu agencia necesita</h2>
+    <p class="section-sub">Cada módulo está diseñado para ahorrar tiempo, cerrar más ventas y deleitar a tus clientes.</p>
+    <div class="features-grid">
+
+      <div class="feature-card animate-fade-up">
+        <div class="feature-icon" style="background:rgba(6,182,212,0.12);color:var(--cyan);">🤖</div>
+        <h3>Chatbot IA</h3>
+        <p>Atiende consultas 24/7 con inteligencia artificial. Cotiza viajes, sugiere destinos y responde preguntas de visas y clima en tiempo real.</p>
+        <div class="feature-tag"><span class="badge badge-cyan">Disponible 24/7</span></div>
+      </div>
+
+      <div class="feature-card animate-fade-up delay-1">
+        <div class="feature-icon" style="background:rgba(59,130,246,0.12);color:var(--blue);">🗺️</div>
+        <h3>Generador de Itinerarios</h3>
+        <p>Crea itinerarios detallados día a día con hoteles, actividades y tips en segundos. Exporta en PDF con un clic.</p>
+        <div class="feature-tag"><span class="badge badge-blue">PDF incluido</span></div>
+      </div>
+
+      <div class="feature-card animate-fade-up delay-2">
+        <div class="feature-icon" style="background:rgba(139,92,246,0.12);color:var(--violet);">👥</div>
+        <h3>CRM Visual</h3>
+        <p>Pipeline Kanban con drag & drop. Gestiona leads desde el primer contacto hasta el cierre de venta sin perder ninguno.</p>
+        <div class="feature-tag"><span class="badge badge-cyan">Drag & Drop</span></div>
+      </div>
+
+      <div class="feature-card animate-fade-up delay-3">
+        <div class="feature-icon" style="background:rgba(16,185,129,0.12);color:var(--emerald);">📊</div>
+        <h3>Dashboard Analytics</h3>
+        <p>Métricas en tiempo real: consultas, itinerarios generados, leads activos y tasa de conversión. Toma decisiones con datos.</p>
+        <div class="feature-tag"><span class="badge badge-green">Tiempo real</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PRECIOS -->
+<section class="pricing" id="precios">
+  <div class="container">
+    <div class="section-label"><span class="badge badge-cyan">Planes y precios</span></div>
+    <h2 class="section-title">Elige tu plan</h2>
+    <p class="section-sub">Sin contratos. Cancela cuando quieras. Empieza gratis 14 días.</p>
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <div class="pricing-name">Starter</div>
+        <div class="pricing-price">$299<span>/mes</span></div>
+        <p class="pricing-desc">Perfecto para agencias pequeñas que quieren automatizar su primer canal.</p>
+        <ul class="pricing-features">
+          <li>Chatbot IA (500 consultas/mes)</li>
+          <li>10 itinerarios/mes</li>
+          <li>CRM hasta 50 leads</li>
+          <li>Dashboard básico</li>
+          <li>Soporte por email</li>
+        </ul>
+        <a href="app/dashboard.html" class="btn btn-outline">Empezar gratis</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="popular-badge">⭐ Más popular</div>
+        <div class="pricing-name">Pro</div>
+        <div class="pricing-price" style="color:var(--cyan)">$599<span>/mes</span></div>
+        <p class="pricing-desc">Para agencias en crecimiento que necesitan automatización completa.</p>
+        <ul class="pricing-features">
+          <li>Chatbot IA (ilimitado)</li>
+          <li>Itinerarios ilimitados + PDF</li>
+          <li>CRM ilimitado</li>
+          <li>Analytics avanzado</li>
+          <li>Integración WhatsApp</li>
+          <li>Soporte prioritario</li>
+        </ul>
+        <a href="app/dashboard.html" class="btn btn-primary">Empezar gratis</a>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-name">Enterprise</div>
+        <div class="pricing-price">$1,200<span>/mes</span></div>
+        <p class="pricing-desc">Para cadenas de agencias con múltiples sucursales y equipos grandes.</p>
+        <ul class="pricing-features">
+          <li>Todo lo de Pro</li>
+          <li>Multi-sucursal</li>
+          <li>API personalizada</li>
+          <li>White label</li>
+          <li>Capacitación incluida</li>
+          <li>Account Manager dedicado</li>
+        </ul>
+        <a href="app/dashboard.html" class="btn btn-outline">Contactar ventas</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section">
+  <div class="container">
+    <h2>¿Listo para automatizar tu agencia?</h2>
+    <p>Prueba el demo en vivo sin registro. Sin tarjeta de crédito.</p>
+    <div class="cta-btns">
+      <a href="app/dashboard.html" id="cta-demo-2" class="btn btn-primary btn-lg">🚀 Ver demo en vivo</a>
+      <a href="app/chatbot.html" class="btn btn-outline btn-lg">💬 Probar chatbot</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>© 2025 TravelAI Platform · Desarrollado con ❤️ y <a href="#">Inteligencia Artificial</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
