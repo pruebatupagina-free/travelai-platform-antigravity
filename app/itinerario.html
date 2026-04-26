@@ -1,93 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Generador de Itinerarios — TravelAI Platform</title>
   <link rel="stylesheet" href="../style.css" />
+  <script src="../config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    .itin-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; min-height: calc(100vh - 64px - 56px); }
-    @media(max-width:900px){ .itin-layout { grid-template-columns: 1fr; } }
+    .itin-grid { display:grid;grid-template-columns:360px 1fr;gap:22px;align-items:start; }
+    @media(max-width:900px){.itin-grid{grid-template-columns:1fr;}}
+    .form-panel { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;position:sticky;top:88px; }
+    .form-panel h2 { font-size:1rem;margin-bottom:18px; }
+    .fg { margin-bottom:13px; }
+    .fg label { display:block;font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px; }
+    .fc { width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-size:.86rem;font-family:'Inter',sans-serif;transition:var(--transition); }
+    .fc:focus { border-color:var(--cyan);background:rgba(6,182,212,.04); }
+    .fc::placeholder { color:var(--text-muted); }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+    .chk-row { display:flex;gap:16px; }
+    .chk-label { display:flex;align-items:center;gap:7px;font-size:.84rem;color:var(--text-secondary);cursor:pointer; }
+    .chk-label input { accent-color:var(--cyan);width:15px;height:15px; }
+    .gen-btn { width:100%;padding:13px;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-size:.92rem;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:var(--transition);margin-top:4px;font-family:'Inter',sans-serif; }
+    .gen-btn:hover { filter:brightness(1.1);transform:translateY(-1px); }
+    .gen-btn:disabled { opacity:.5;cursor:not-allowed;transform:none; }
+    .spinner { width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite; }
 
-    /* Form panel */
-    .form-panel {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 24px; align-self: start;
-      position: sticky; top: 88px;
-    }
-    .form-panel h2 { font-size: 1.1rem; margin-bottom: 20px; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-    .form-control {
-      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 10px 14px;
-      color: var(--text-primary); font-size: 0.88rem; transition: var(--transition);
-    }
-    .form-control:focus { border-color: var(--cyan); background: rgba(6,182,212,0.05); }
-    .form-control::placeholder { color: var(--text-muted); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn-generate {
-      width: 100%; justify-content: center;
-      background: linear-gradient(135deg, var(--cyan), var(--blue));
-      color: #fff; padding: 14px; border-radius: var(--radius-md);
-      font-size: 0.95rem; font-weight: 700; transition: var(--transition);
-      display: flex; align-items: center; gap: 8px;
-    }
-    .btn-generate:hover { transform: translateY(-2px); filter: brightness(1.1); }
-    .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .out-panel { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden; }
+    .out-head { padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.02); }
+    .out-head h3 { font-size:.9rem; }
+    .out-acts { display:flex;gap:8px; }
+    .out-body { padding:24px;min-height:380px; }
+    .placeholder { display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;text-align:center;gap:10px;color:var(--text-muted); }
+    .placeholder .ico { font-size:2.8rem;opacity:.35; }
 
-    /* Output panel */
-    .output-panel {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); overflow: hidden;
-    }
-    .output-header {
-      padding: 16px 24px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(255,255,255,0.02);
-    }
-    .output-header h3 { font-size: 0.95rem; }
-    .output-actions { display: flex; gap: 8px; }
-    .output-body { padding: 28px; min-height: 400px; }
-    .output-placeholder {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 400px; color: var(--text-muted); text-align: center; gap: 12px;
-    }
-    .output-placeholder .icon { font-size: 3rem; opacity: 0.4; }
-
-    /* Itinerary formatting */
-    #itineraryContent { line-height: 1.8; }
-    #itineraryContent h1 { font-size: 1.5rem; color: var(--cyan); margin-bottom: 8px; }
-    #itineraryContent h2 { font-size: 1.1rem; color: var(--blue); margin: 20px 0 8px; border-left: 3px solid var(--blue); padding-left: 12px; }
-    #itineraryContent h3 { font-size: 0.95rem; color: var(--text-primary); margin: 12px 0 4px; }
-    #itineraryContent p { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 8px; }
-    #itineraryContent ul { padding-left: 20px; margin-bottom: 8px; }
-    #itineraryContent li { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 4px; }
-    #itineraryContent strong { color: var(--text-primary); }
-
-    @media print {
-      .sidebar, .app-header, .form-panel, .output-header, .navbar { display: none !important; }
-      .main-content { margin-left: 0; }
-      .itin-layout { grid-template-columns: 1fr; }
-      .output-panel { border: none; }
-      .output-body { padding: 0; }
-      body { background: #fff; color: #000; }
-      #itineraryContent * { color: #000 !important; }
-    }
+    /* Itinerary typography */
+    #itnContent { line-height:1.85;font-size:.88rem; }
+    #itnContent h1 { font-size:1.4rem;color:var(--cyan);margin-bottom:6px; }
+    #itnContent h2 { font-size:1rem;color:var(--blue);margin:18px 0 6px;border-left:3px solid var(--blue);padding-left:10px; }
+    #itnContent p { color:var(--text-secondary);margin-bottom:6px; }
+    #itnContent ul { padding-left:18px;margin-bottom:6px; }
+    #itnContent li { color:var(--text-secondary);margin-bottom:3px; }
+    #itnContent strong { color:var(--text-primary); }
+    #itnContent hr { border:none;border-top:1px solid var(--border);margin:14px 0; }
+    #itnContent .emoji-line { font-size:.88rem;color:var(--text-secondary);margin:5px 0; }
   </style>
 </head>
 <body>
-<div class="app-layout">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
+<!-- API KEY MODAL -->
+<div class="api-modal-overlay" id="apiModal">
+  <div class="api-modal">
+    <div class="key-icon">🔑</div>
+    <h2>Activar Generador de Itinerarios</h2>
+    <p>Ingresa tu Gemini API Key para generar itinerarios personalizados con IA.</p>
+    <input id="modalKey" type="password" class="api-key-input" placeholder="AIza... (tu Gemini API Key)" />
+    <div class="api-key-hint">Obtén tu key <strong>gratis</strong> en <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a><br>Solo se guarda en esta sesión.</div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveApiKey()">🔓 Activar IA</button>
+  </div>
+</div>
+
+<div class="app-layout">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon">✈️</div>
-      <div>
-        <div class="logo-text">TravelAI</div>
-        <div class="logo-sub">PLATFORM</div>
-      </div>
+      <div><div class="logo-text">TravelAI</div><div class="logo-sub">PLATFORM</div></div>
     </div>
     <nav class="sidebar-nav">
       <div class="sidebar-section-label">Principal</div>
@@ -102,97 +79,85 @@
     <div class="sidebar-footer">
       <div class="sidebar-user">
         <div class="user-avatar">AG</div>
-        <div class="user-info">
-          <div class="user-name">Agencia Demo</div>
-          <div class="user-plan">Plan Pro</div>
-        </div>
+        <div class="user-info"><div class="user-name">Agencia Demo</div><div class="user-plan">Plan Pro</div></div>
       </div>
     </div>
   </aside>
 
-  <!-- MAIN -->
   <div class="main-content">
     <header class="app-header">
-      <h1>🗺️ Generador de Itinerarios</h1>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+        <h1>🗺️ Generador de Itinerarios</h1>
+        <span class="badge badge-cyan">DEMO</span>
+      </div>
       <div class="app-header-right">
-        <input id="apiKeyItin" type="password" 
-          style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text-primary);font-size:0.78rem;width:240px;font-family:Inter,sans-serif;"
-          placeholder="🔑 Gemini API Key (aistudio.google.com)" />
+        <span id="apiStatusBadge" class="api-status-badge inactive" onclick="showApiModal()">🔴 Sin API Key</span>
       </div>
     </header>
 
     <div class="app-body">
-      <div class="itin-layout">
+      <div class="itin-grid">
 
         <!-- FORM -->
         <div class="form-panel">
           <h2>✈️ Configurar viaje</h2>
-          <div class="form-group">
-            <label>Destino</label>
-            <input id="destino" class="form-control" type="text" placeholder="Ej: Cancún, México" />
+          <div class="fg"><label>Destino *</label><input id="fDest" class="fc" type="text" placeholder="Ej: Cancún, México" /></div>
+          <div class="fg"><label>Origen</label><input id="fOrig" class="fc" type="text" placeholder="Ej: Monterrey, México" /></div>
+          <div class="form-row">
+            <div class="fg"><label>Fecha de salida</label><input id="fOut" class="fc" type="date" /></div>
+            <div class="fg"><label>Fecha de regreso</label><input id="fRet" class="fc" type="date" /></div>
           </div>
           <div class="form-row">
-            <div class="form-group">
-              <label>Fecha de ida</label>
-              <input id="fechaIda" class="form-control" type="date" />
-            </div>
-            <div class="form-group">
-              <label>Fecha de vuelta</label>
-              <input id="fechaVuelta" class="form-control" type="date" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label># Personas</label>
-              <select id="personas" class="form-control">
-                <option>1</option><option>2</option><option>3</option>
-                <option>4</option><option value="5+">5+</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Tipo de viaje</label>
-              <select id="tipo" class="form-control">
-                <option>Playa y relax</option>
-                <option>Aventura</option>
-                <option>Cultural</option>
-                <option>Romántico</option>
-                <option>Familiar</option>
-                <option>Negocios</option>
+            <div class="fg"><label>Personas (1-20)</label><input id="fPax" class="fc" type="number" min="1" max="20" value="2" /></div>
+            <div class="fg"><label>Presupuesto/persona</label>
+              <select id="fBudget" class="fc">
+                <option value="$500-$1,000">$500 – $1,000</option>
+                <option value="$1,000-$2,000" selected>$1,000 – $2,000</option>
+                <option value="$2,000-$5,000">$2,000 – $5,000</option>
+                <option value="$5,000+">$5,000+</option>
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label>Presupuesto total (USD)</label>
-            <select id="presupuesto" class="form-control">
-              <option>Económico (menos de $1,000)</option>
-              <option>Moderado ($1,000 - $3,000)</option>
-              <option>Estándar ($3,000 - $6,000)</option>
-              <option>Premium ($6,000 - $12,000)</option>
-              <option>Lujo (más de $12,000)</option>
+          <div class="fg"><label>Tipo de viaje</label>
+            <select id="fType" class="fc">
+              <option>Playa y relax</option><option>Aventura</option>
+              <option>Romántico</option><option>Familiar</option>
+              <option>Cultural</option><option>Negocio</option>
             </select>
           </div>
-          <button class="btn-generate" id="generateBtn" onclick="generateItinerary()">
-            <span id="btnIcon">🪄</span>
-            <span id="btnText">Generar itinerario</span>
+          <div class="fg">
+            <label>Incluir en el plan</label>
+            <div class="chk-row">
+              <label class="chk-label"><input type="checkbox" id="fFlights" checked /> ✈️ Vuelos</label>
+              <label class="chk-label"><input type="checkbox" id="fHotel" checked /> 🏨 Hotel</label>
+            </div>
+          </div>
+          <div class="fg"><label>Notas especiales</label>
+            <textarea id="fNotes" class="fc" rows="2" placeholder="Alergias, preferencias, accesibilidad..."></textarea>
+          </div>
+          <button class="gen-btn" id="genBtn" onclick="generate()">
+            <span id="btnIco">🪄</span><span id="btnTxt">Generar itinerario con IA</span>
           </button>
         </div>
 
         <!-- OUTPUT -->
-        <div class="output-panel">
-          <div class="output-header">
-            <h3 id="outputTitle">Itinerario generado</h3>
-            <div class="output-actions">
-              <button class="btn btn-ghost btn-sm" id="copyBtn" onclick="copyItinerary()" style="display:none">📋 Copiar</button>
-              <button class="btn btn-ghost btn-sm" id="pdfBtn" onclick="window.print()" style="display:none">📄 PDF</button>
+        <div class="out-panel">
+          <div class="out-head">
+            <h3 id="outTitle">Itinerario generado</h3>
+            <div class="out-acts">
+              <button class="btn btn-ghost btn-sm" id="copyBtn" onclick="copyItn()" style="display:none">📋 Copiar</button>
+              <button class="btn btn-ghost btn-sm" id="pdfBtn" onclick="downloadPdf()" style="display:none">📄 PDF</button>
+              <button class="btn btn-ghost btn-sm" id="resetBtn" onclick="resetForm()" style="display:none">🔄 Nuevo</button>
             </div>
           </div>
-          <div class="output-body">
-            <div class="output-placeholder" id="placeholder">
-              <div class="icon">🗺️</div>
-              <p>Completa el formulario y haz clic en <strong>"Generar itinerario"</strong><br>para que la IA cree tu plan de viaje personalizado.</p>
-              <p style="font-size:0.78rem;">Recuerda agregar tu Gemini API Key gratuita arriba ↑</p>
+          <div class="out-body">
+            <div class="placeholder" id="placeholder">
+              <div class="ico">🗺️</div>
+              <p>Completa el formulario y genera tu itinerario personalizado con IA.</p>
+              <p style="font-size:.75rem">Requiere Gemini API Key (gratis) ↑</p>
             </div>
-            <div id="itineraryContent" style="display:none"></div>
+            <div id="itnContent" style="display:none"></div>
           </div>
         </div>
 
@@ -202,130 +167,194 @@
 </div>
 
 <script>
-  // Load saved key
-  const savedKey = localStorage.getItem('gemini_api_key') || '';
-  if (savedKey) document.getElementById('apiKeyItin').value = '••••••••••••••••';
-
-  function getApiKey() {
-    const val = document.getElementById('apiKeyItin').value.trim();
-    if (val && val !== '••••••••••••••••') {
-      localStorage.setItem('gemini_api_key', val);
-      return val;
-    }
-    return localStorage.getItem('gemini_api_key') || '';
+  function getKey() { return sessionStorage.getItem(TRAVELAI_CONFIG.sessionKeyName)||''; }
+  function updateBadge() {
+    const b=document.getElementById('apiStatusBadge');
+    if(getKey()){b.className='api-status-badge active';b.textContent='🟢 API Key activa';}
+    else{b.className='api-status-badge inactive';b.textContent='🔴 Sin API Key';}
+  }
+  function showApiModal(){document.getElementById('apiModal').style.display='flex';}
+  function hideApiModal(){document.getElementById('apiModal').style.display='none';}
+  function saveApiKey(){
+    const v=document.getElementById('modalKey').value.trim();
+    if(!v){alert('Ingresa una API Key válida.');return;}
+    sessionStorage.setItem(TRAVELAI_CONFIG.sessionKeyName,v);
+    updateBadge();hideApiModal();
+  }
+  function toggleSidebar(){
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarBackdrop').classList.toggle('open');
   }
 
-  function simpleMarkdown(text) {
-    return text
-      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>\n?)+/g, s => `<ul>${s}</ul>`)
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/^(?!<[h|u|l])(.+)$/gm, '<p>$1</p>');
+  // Markdown → HTML simple
+  function md(t){
+    return t
+      .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+      .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+      .replace(/^### (.+)$/gm,'<h3 style="color:var(--text-primary);margin:10px 0 4px">$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^- (.+)$/gm,'<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g,s=>`<ul>${s}</ul>`)
+      .replace(/^---$/gm,'<hr>')
+      .replace(/\n\n/g,'</p><p>')
+      .replace(/^(?!<[h|u|l|p|h])(.+)$/gm,'<p>$1</p>');
   }
 
-  async function generateItinerary() {
-    const apiKey = getApiKey();
-    const destino = document.getElementById('destino').value.trim();
-    const fechaIda = document.getElementById('fechaIda').value;
-    const fechaVuelta = document.getElementById('fechaVuelta').value;
-    const personas = document.getElementById('personas').value;
-    const tipo = document.getElementById('tipo').value;
-    const presupuesto = document.getElementById('presupuesto').value;
+  let lastRaw = '';
 
-    if (!destino) { alert('Por favor ingresa un destino.'); return; }
+  async function generate(){
+    const key=getKey();
+    const dest=document.getElementById('fDest').value.trim();
+    if(!dest){alert('Por favor ingresa un destino.');return;}
+    if(!key){showApiModal();return;}
 
-    const btn = document.getElementById('generateBtn');
-    btn.disabled = true;
-    document.getElementById('btnIcon').innerHTML = '<div class="spinner"></div>';
-    document.getElementById('btnText').textContent = 'Generando...';
-    document.getElementById('placeholder').style.display = 'none';
-    document.getElementById('itineraryContent').style.display = 'none';
+    const orig=document.getElementById('fOrig').value.trim()||'No especificado';
+    const dOut=document.getElementById('fOut').value;
+    const dRet=document.getElementById('fRet').value;
+    const pax=document.getElementById('fPax').value||2;
+    const budget=document.getElementById('fBudget').value;
+    const type=document.getElementById('fType').value;
+    const flights=document.getElementById('fFlights').checked;
+    const hotel=document.getElementById('fHotel').checked;
+    const notes=document.getElementById('fNotes').value.trim();
 
-    const dias = fechaIda && fechaVuelta
-      ? Math.max(1, Math.round((new Date(fechaVuelta) - new Date(fechaIda)) / 86400000))
-      : 7;
+    const dias=dOut&&dRet?Math.max(1,Math.round((new Date(dRet)-new Date(dOut))/86400000)):7;
 
-    const prompt = `Crea un itinerario de viaje completo y detallado para:
-- Destino: ${destino}
-- Duración: ${dias} días
-- Número de personas: ${personas}
-- Tipo de viaje: ${tipo}
-- Presupuesto: ${presupuesto}
-${fechaIda ? `- Fecha de ida: ${fechaIda}` : ''}
-${fechaVuelta ? `- Fecha de vuelta: ${fechaVuelta}` : ''}
+    const prompt=`Eres un experto en viajes. Crea un itinerario detallado con este formato EXACTO:
 
-El itinerario debe incluir:
-1. Título atractivo con el destino
-2. Resumen del viaje (clima, mejor época, tips generales)
-3. Plan día a día con: mañana, tarde y noche. Incluir actividades, lugares, restaurantes recomendados
-4. Hoteles sugeridos según presupuesto (3 opciones)
-5. Tips de transporte local
-6. Presupuesto estimado desglosado
-7. Tips culturales importantes
+🌍 ITINERARIO: ${dest}
+📅 Duración: ${dias} días
+👥 Viajeros: ${pax} persona(s)
+💰 Presupuesto por persona: ${budget}
+🛫 Origen: ${orig}
+✈️ Tipo: ${type}
 
-Usa formato Markdown con encabezados claros. Responde en español.`;
+---
+${Array.from({length:dias},(_,i)=>`DÍA ${i+1} — [Día de la semana]
+🌅 Mañana: [actividad + tip]
+☀️ Tarde: [actividad + tip]
+🌙 Noche: [restaurante/actividad + tip]
+🏨 Hotel sugerido: [nombre + precio aprox]`).join('\n\n')}
+---
 
-    if (!apiKey) {
-      document.getElementById('itineraryContent').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)">
-        <div style="font-size:2rem;margin-bottom:12px">🔑</div>
-        <p>Necesitas una Gemini API Key gratuita para generar itinerarios.</p>
-        <p style="margin-top:8px">Obtén la tuya en <a href="https://aistudio.google.com" target="_blank" style="color:var(--cyan)">aistudio.google.com</a> (gratis)</p>
-      </div>`;
-      document.getElementById('itineraryContent').style.display = 'block';
-      btn.disabled = false;
-      document.getElementById('btnIcon').textContent = '🪄';
-      document.getElementById('btnText').textContent = 'Generar itinerario';
-      return;
-    }
+${flights?'✈️ VUELOS SUGERIDOS:\n[opciones de aerolíneas y precios aproximados]\n':''}
+${hotel?'🏨 HOTELES RECOMENDADOS:\n[3 opciones con precio por noche]\n':''}
+💡 TIPS IMPORTANTES: [3-5 consejos clave]
+⚠️ DOCUMENTOS NECESARIOS: [visa, pasaporte, seguro]
+💵 DESGLOSE DE COSTOS ESTIMADO:
+  · Vuelos: $XXX
+  · Hotel: $XXX/noche
+  · Actividades: $XXX
+  · Comidas: $XXX/día
+  · Total estimado por persona: $XXX
+${notes?`\nNotas especiales a considerar: ${notes}`:''}
 
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] })
-        }
-      );
-      const data = await res.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo generar el itinerario.';
-      document.getElementById('itineraryContent').innerHTML = simpleMarkdown(text);
-      document.getElementById('itineraryContent').style.display = 'block';
-      document.getElementById('outputTitle').textContent = `✈️ Itinerario: ${destino}`;
-      document.getElementById('copyBtn').style.display = 'inline-flex';
-      document.getElementById('pdfBtn').style.display = 'inline-flex';
-      window._lastItinerary = text;
-    } catch (e) {
-      document.getElementById('itineraryContent').innerHTML = '<p style="color:var(--rose)">❌ Error al generar. Verifica tu API Key e internet.</p>';
-      document.getElementById('itineraryContent').style.display = 'block';
-    }
+Responde completamente en español. Sé específico y práctico.`;
 
-    btn.disabled = false;
-    document.getElementById('btnIcon').textContent = '🪄';
-    document.getElementById('btnText').textContent = 'Generar itinerario';
-  }
+    const btn=document.getElementById('genBtn');
+    btn.disabled=true;
+    document.getElementById('btnIco').innerHTML='<div class="spinner"></div>';
+    document.getElementById('btnTxt').textContent='Generando...';
+    document.getElementById('placeholder').style.display='none';
+    document.getElementById('itnContent').style.display='none';
 
-  function copyItinerary() {
-    if (window._lastItinerary) {
-      navigator.clipboard.writeText(window._lastItinerary).then(() => {
-        const btn = document.getElementById('copyBtn');
-        btn.textContent = '✅ Copiado';
-        setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+    try{
+      const r=await fetch(`${TRAVELAI_CONFIG.apiEndpoint}?key=${key}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({contents:[{role:'user',parts:[{text:prompt}]}]})
       });
+      const data=await r.json();
+      if(!r.ok){throw new Error(data.error?.message||'Error de API');}
+      const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'No se generó respuesta.';
+      lastRaw=text;
+      document.getElementById('itnContent').innerHTML=md(text);
+      document.getElementById('itnContent').style.display='block';
+      document.getElementById('outTitle').textContent=`✈️ ${dest} · ${dias} días`;
+      ['copyBtn','pdfBtn','resetBtn'].forEach(id=>document.getElementById(id).style.display='inline-flex');
+    }catch(e){
+      document.getElementById('itnContent').innerHTML=`<p style="color:var(--rose)">❌ Error: ${e.message}. Verifica tu API Key.</p>`;
+      document.getElementById('itnContent').style.display='block';
     }
+    btn.disabled=false;
+    document.getElementById('btnIco').textContent='🪄';
+    document.getElementById('btnTxt').textContent='Generar itinerario con IA';
   }
 
-  // Set default dates
-  const today = new Date();
-  const next7 = new Date(today); next7.setDate(today.getDate() + 7);
-  const fmt = d => d.toISOString().split('T')[0];
-  document.getElementById('fechaIda').value = fmt(today);
-  document.getElementById('fechaVuelta').value = fmt(next7);
+  function copyItn(){
+    if(!lastRaw)return;
+    navigator.clipboard.writeText(lastRaw).then(()=>{
+      const b=document.getElementById('copyBtn');
+      b.textContent='✅ Copiado!';setTimeout(()=>{b.textContent='📋 Copiar';},2000);
+    });
+  }
+
+  function downloadPdf(){
+    if(!lastRaw)return;
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth();
+    const H=doc.internal.pageSize.getHeight();
+    const M=15; let y=M;
+
+    // Header gradient bar
+    doc.setFillColor(6,182,212);
+    doc.rect(0,0,W,14,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(11);doc.setFont('helvetica','bold');
+    doc.text('✈  TravelAI Platform',M,9.5);
+    doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.text('Itinerario generado por IA',W-M,9.5,{align:'right'});
+    y=22;
+
+    // Title
+    const dest=document.getElementById('fDest').value||'Destino';
+    doc.setTextColor(6,182,212);doc.setFontSize(16);doc.setFont('helvetica','bold');
+    doc.text(`🌍 Itinerario: ${dest}`,M,y);y+=8;
+
+    // Subtitle line
+    doc.setDrawColor(6,182,212);doc.setLineWidth(0.5);doc.line(M,y,W-M,y);y+=7;
+
+    // Content
+    doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','normal');
+    const lines=doc.splitTextToSize(lastRaw.replace(/[🌍📅👥💰🛫✈️🌅☀️🌙🏨💡⚠️💵🔑]/g,''),W-M*2);
+    lines.forEach(line=>{
+      if(y>H-20){doc.addPage();y=M;}
+      const isBold=line.trim().startsWith('DÍA')||line.trim().startsWith('##');
+      doc.setFont('helvetica',isBold?'bold':'normal');
+      doc.text(line,M,y);y+=5;
+    });
+
+    // Footer
+    const pages=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setFillColor(15,23,42);doc.rect(0,H-10,W,10,'F');
+      doc.setTextColor(148,163,184);doc.setFontSize(7);doc.setFont('helvetica','normal');
+      doc.text(`Generado por TravelAI Platform · Página ${i} de ${pages}`,W/2,H-4,{align:'center'});
+    }
+    doc.save(`Itinerario-${dest.replace(/\s+/g,'-')}.pdf`);
+  }
+
+  function resetForm(){
+    document.getElementById('fDest').value='';
+    document.getElementById('fOrig').value='';
+    document.getElementById('fNotes').value='';
+    document.getElementById('itnContent').style.display='none';
+    document.getElementById('placeholder').style.display='flex';
+    document.getElementById('outTitle').textContent='Itinerario generado';
+    ['copyBtn','pdfBtn','resetBtn'].forEach(id=>document.getElementById(id).style.display='none');
+    lastRaw='';
+    document.getElementById('fDest').focus();
+  }
+
+  // Init
+  updateBadge();
+  if(!getKey())showApiModal();
+  const t=new Date(),t2=new Date(t);t2.setDate(t.getDate()+7);
+  const fmt=d=>d.toISOString().split('T')[0];
+  document.getElementById('fOut').value=fmt(t);
+  document.getElementById('fRet').value=fmt(t2);
+  document.getElementById('modalKey').addEventListener('keydown',e=>{if(e.key==='Enter')saveApiKey();});
 </script>
 </body>
 </html>
